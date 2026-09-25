@@ -28,3 +28,4 @@ php artisan serve & php artisan queue:work
 - LibreDWG output can contain `5 / 0` handle tags that ezdxf rejects even in recover mode — `dwg.strip_null_handles()` removes them.
 - JWW text is raw Shift-JIS; JW_CAD print settings (`Printer_Orientation = 0`) appear as TEXT far from the drawing and must be filtered.
 - Playwright drops non-ASCII file paths in `setInputFiles`; pass `{name, buffer}` objects and run with `LANG=C.UTF-8`.
+- Behind a reverse proxy: API returns relative download URLs, and `config/trustedproxy.php` (`TRUSTED_PROXIES`) decides whose `X-Forwarded-*` headers count — the upload rate limit depends on it.

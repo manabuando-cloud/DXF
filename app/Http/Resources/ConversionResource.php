@@ -26,8 +26,8 @@ class ConversionResource extends JsonResource
             'elapsed_ms' => $this->meta['elapsed_ms'] ?? null,
             'warnings' => $this->warnings ?? [],
             'error' => $this->error,
-            'download_url' => $done ? route('conversions.download', $this->resource) : null,
-            'preview_url' => $done && $this->batch->target === 'pdf' ? route('conversions.download', [$this->resource, 'inline' => 1]) : null,
+            'download_url' => $done ? route('conversions.download', $this->resource, false) : null,
+            'preview_url' => $done && $this->batch->target === 'pdf' ? route('conversions.download', [$this->resource, 'inline' => 1], false) : null,
         ];
     }
 }

@@ -41,20 +41,34 @@
 | `converter/cadconv/` | 変換エンジン本体（Python） |
 | `converter/native/jww2jif/` | JWW 読み込みツールのソースとビルドスクリプト |
 | `Dockerfile`, `docker/` | 本番用コンテナ（FrankenPHP + キューワーカー + スケジューラ） |
+| `deploy/Caddyfile.example` | HTTPS 用リバースプロキシ（Caddy）の設定例 |
 
 ## 公開サーバーで動かす（Docker・推奨）
 
 ```bash
 docker compose up -d --build
-# → http://サーバーのアドレス:8080
+# → http://localhost:8080 （サーバー自身からのみアクセス可能）
 ```
 
 - 変換ツール（LibreDWG の `dwg2dxf`、`jww2jif`）はイメージのビルド時に自動でソースからビルドされます。
 - データ（SQLite・一時ファイル・APP_KEY）は `storage` ボリュームに保存されます。
-- **HTTPS 化**：`docker-compose.yml` の `SERVER_NAME` を独自ドメイン（例 `cad.example.com`）にして 80/443 番ポートを公開すると、
-  FrankenPHP（Caddy）が Let's Encrypt の証明書を自動取得します。HTTPS にすると Chrome の
-  「安全でないダウンロード」警告も出なくなります。
-- 主な設定（環境変数）
+- 既定ではポート 8080 を **そのマシン自身（127.0.0.1）にだけ** 公開します。
+  社内 LAN の他の PC から HTTP のまま試す場合は、`docker-compose.yml` の `ports` を `"8080:8080"` に変更してください。
+
+### HTTPS で公開する（Caddy を前に置く）
+
+1. ドメイン（例 `cad.example.com`）の DNS A レコードをサーバーの IP アドレスに向けます。
+2. サーバーのファイアウォールで 80 番・443 番ポートを開けます。
+3. サーバーに Caddy を入れます：`sudo apt install -y caddy`
+4. [`deploy/Caddyfile.example`](deploy/Caddyfile.example) を `/etc/caddy/Caddyfile` にコピーし、`cad.example.com` を自分のドメインに書き換えます。
+5. `sudo systemctl reload caddy` — 証明書は Caddy が自動で取得・更新します。
+6. `docker-compose.yml` の `APP_URL` を `https://自分のドメイン` にして `docker compose up -d` で反映します。
+
+HTTPS にすると Chrome の「安全でないダウンロード」警告も出なくなります。
+アプリは `TRUSTED_PROXIES`（既定：127.0.0.1 と Docker のネットワーク）からの `X-Forwarded-*` ヘッダーだけを信用するので、
+アップロード回数制限は利用者ごとの本当の IP アドレスで数えられ、外部から IP を偽装することはできません。
+
+### 主な設定（環境変数）
 
 | 変数 | 既定値 | 説明 |
 | --- | --- | --- |
@@ -64,6 +78,8 @@ docker compose up -d --build
 | `CONVERTER_RATE_LIMIT` | 20 | 1 分あたり・1 IP あたりのアップロード回数 |
 | `CONVERTER_TIMEOUT` | 300 | 1 ファイルの変換タイムアウト（秒） |
 | `QUEUE_WORKERS` | 2 | 同時に変換するワーカー数 |
+| `TRUSTED_PROXIES` | `127.0.0.1,::1,172.16.0.0/12` | 信用するリバースプロキシ（カンマ区切り、CIDR 可） |
+| `APP_LISTEN` | `:8080` | コンテナ内で待ち受けるアドレス |
 | `CADCONV_ODA` | – | ODA File Converter のパス（あれば DWG 変換で優先使用） |
 
 ## 開発環境（Ubuntu / macOS）

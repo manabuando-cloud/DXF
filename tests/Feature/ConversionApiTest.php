@@ -174,6 +174,42 @@ class ConversionApiTest extends TestCase
         $this->postJson('/api/batches', $payload())->assertTooManyRequests();
     }
 
+    public function test_links_are_relative_so_they_work_behind_an_https_proxy(): void
+    {
+        $response = $this->postJson('/api/batches', [
+            'target' => 'pdf',
+            'files' => [UploadedFile::fake()->create('a.dxf', 1), UploadedFile::fake()->create('b.dxf', 1)],
+        ]);
+
+        $this->assertStringStartsWith('/api/conversions/', $response->json('data.conversions.0.download_url'));
+        $this->assertStringStartsWith('/api/conversions/', $response->json('data.conversions.0.preview_url'));
+        $this->assertStringStartsWith('/api/batches/', $response->json('data.zip_url'));
+    }
+
+    public function test_rate_limit_uses_client_ip_from_trusted_proxy(): void
+    {
+        config(['converter.rate_limit' => 1]);
+        $payload = fn () => ['target' => 'dxf', 'files' => [UploadedFile::fake()->create('a.dxf', 1)]];
+        $viaProxy = fn (string $client) => $this->withServerVariables(['REMOTE_ADDR' => '172.18.0.1'])
+            ->withHeaders(['X-Forwarded-For' => $client, 'X-Forwarded-Proto' => 'https']);
+
+        // Two different visitors behind the same proxy get separate limits.
+        $viaProxy('203.0.113.10')->postJson('/api/batches', $payload())->assertCreated();
+        $viaProxy('203.0.113.20')->postJson('/api/batches', $payload())->assertCreated();
+        $viaProxy('203.0.113.10')->postJson('/api/batches', $payload())->assertTooManyRequests();
+    }
+
+    public function test_untrusted_clients_cannot_spoof_their_ip(): void
+    {
+        config(['converter.rate_limit' => 1]);
+        $payload = fn () => ['target' => 'dxf', 'files' => [UploadedFile::fake()->create('a.dxf', 1)]];
+        $direct = fn (string $claimed) => $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.7'])
+            ->withHeaders(['X-Forwarded-For' => $claimed]);
+
+        $direct('203.0.113.10')->postJson('/api/batches', $payload())->assertCreated();
+        $direct('203.0.113.99')->postJson('/api/batches', $payload())->assertTooManyRequests();
+    }
+
     public function test_home_page_renders(): void
     {
         $this->withoutVite()->get('/')->assertOk()->assertSee('<div id="app"></div>', false);

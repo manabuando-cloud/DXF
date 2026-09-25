@@ -1,0 +1,20 @@
+# /etc/caddy/Caddyfile on the Docker host.
+# Replace the domain; Caddy obtains and renews the HTTPS certificate itself.
+# Ports 80 and 443 must be open, and the domain's DNS A record must point here.
+
+cad.example.com {
+    encode zstd gzip
+
+    # Allow batches of large drawings (matches docker/php.ini post_max_size).
+    request_body {
+        max_size 1GB
+    }
+
+    reverse_proxy 127.0.0.1:8080 {
+        # Conversions of large drawings can take a while to upload.
+        transport http {
+            read_timeout 10m
+            write_timeout 10m
+        }
+    }
+}

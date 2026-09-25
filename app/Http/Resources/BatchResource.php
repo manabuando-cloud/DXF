@@ -26,7 +26,7 @@ class BatchResource extends JsonResource
                 'failed' => $counts->get('failed', 0),
             ],
             'expires_at' => $this->expires_at->toIso8601String(),
-            'zip_url' => $counts->get('done', 0) > 0 ? route('batches.download', $this->resource) : null,
+            'zip_url' => $counts->get('done', 0) > 0 ? route('batches.download', $this->resource, false) : null,
             'conversions' => ConversionResource::collection($this->conversions),
         ];
     }

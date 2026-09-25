@@ -81,7 +81,7 @@ ENV APP_ENV=production \
     CADCONV_JWW2JIF=/usr/local/bin/jww2jif \
     CADCONV_FONT=/usr/share/fonts/opentype/ipaexfont-gothic/ipaexg.ttf \
     XDG_CACHE_HOME=/app/storage/framework/cache \
-    SERVER_NAME=:8080
+    APP_LISTEN=:8080
 
 RUN chmod +x /usr/local/bin/app-entrypoint \
  && chown -R www-data:www-data /app/storage /app/bootstrap/cache
