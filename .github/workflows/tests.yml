@@ -1,0 +1,54 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, master, 'claude/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  converter:
+    name: Converter (Python + native tools)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install fonts
+        run: sudo apt-get update && sudo apt-get install -y fonts-ipaexfont-gothic
+      - name: Build jww2jif
+        run: converter/native/jww2jif/build.sh
+      - name: Install Python packages
+        run: pip install -r converter/requirements.txt pytest
+      - name: Run pytest
+        working-directory: converter
+        run: python -m pytest -q
+
+  laravel:
+    name: Laravel + React
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci
+      - name: Type-check and build front-end
+        run: npx tsc -p . && npm run build
+      - name: Code style
+        run: vendor/bin/pint --test
+      - name: PHPUnit
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test

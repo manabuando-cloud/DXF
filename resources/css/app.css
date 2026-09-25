@@ -1,0 +1,124 @@
+@import 'tailwindcss';
+
+@source '../js/**/*.tsx';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Space Grotesk Variable', 'Space Grotesk', 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic UI', 'Meiryo', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --color-void: #05070d;
+    --color-deep: #0a0f1c;
+    --color-panel: rgb(14 20 36 / 0.62);
+    --color-line: rgb(148 163 184 / 0.14);
+    --color-ink: #e6edf7;
+    --color-mute: #8b98ad;
+    --color-cyan: #22d3ee;
+    --color-violet: #a78bfa;
+    --color-lime: #a3e635;
+    --color-rose: #fb7185;
+    --color-amber: #fbbf24;
+
+    --animate-scan: scan 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    --animate-shimmer: shimmer 1.4s linear infinite;
+    --animate-spin-slow: spin 8s linear infinite;
+    --animate-float: float 7s ease-in-out infinite;
+
+    @keyframes scan {
+        0% { transform: translateY(-100%); opacity: 0; }
+        15% { opacity: 1; }
+        85% { opacity: 1; }
+        100% { transform: translateY(100%); opacity: 0; }
+    }
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+    }
+    @keyframes float {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(0, -24px, 0) scale(1.05); }
+    }
+}
+
+@layer base {
+    html { color-scheme: dark; }
+    body { font-feature-settings: 'ss01', 'tnum'; }
+    ::selection { background: rgb(34 211 238 / 0.35); }
+    :focus-visible { outline: 2px solid var(--color-cyan); outline-offset: 3px; border-radius: 10px; }
+}
+
+@layer components {
+    /* Receding blueprint grid behind everything. */
+    .grid-floor {
+        background-image:
+            linear-gradient(rgb(34 211 238 / 0.09) 1px, transparent 1px),
+            linear-gradient(90deg, rgb(34 211 238 / 0.09) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%);
+    }
+
+    .glass {
+        background: var(--color-panel);
+        border: 1px solid var(--color-line);
+        backdrop-filter: blur(18px) saturate(140%);
+        box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 30px 60px -30px rgb(0 0 0 / 0.8);
+    }
+
+    /* Rotating neon rim used by the drop zone. */
+    .neon-rim {
+        position: relative;
+        isolation: isolate;
+    }
+    .neon-rim::before {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        z-index: -1;
+        border-radius: inherit;
+        padding: 1px;
+        background: conic-gradient(from var(--rim-angle, 0deg), transparent 0 40%, var(--color-cyan) 50%, var(--color-violet) 60%, transparent 70% 100%);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        animation: rim 6s linear infinite;
+        opacity: 0.8;
+    }
+    .neon-rim[data-active='true']::before { animation-duration: 1.6s; opacity: 1; }
+
+    .text-holo {
+        background: linear-gradient(100deg, #e6edf7 10%, var(--color-cyan) 45%, var(--color-violet) 75%, #e6edf7 100%);
+        background-size: 200% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: holo 8s ease-in-out infinite;
+    }
+}
+
+@property --rim-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@keyframes rim { to { --rim-angle: 360deg; } }
+@keyframes holo { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+@layer components {
+    .icon-btn {
+        display: grid;
+        place-items: center;
+        height: 2.25rem;
+        width: 2.25rem;
+        flex-shrink: 0;
+        border-radius: 0.5rem;
+        border: 1px solid var(--color-line);
+        color: var(--color-mute);
+        transition: all 150ms;
+    }
+    .icon-btn:hover { color: var(--color-ink); border-color: rgb(34 211 238 / 0.4); background: rgb(34 211 238 / 0.08); }
+}

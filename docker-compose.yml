@@ -1,0 +1,22 @@
+services:
+  app:
+    build: .
+    image: cad-convert
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      APP_NAME: "CAD Convert"
+      APP_URL: "http://localhost:8080"
+      # For automatic HTTPS put your domain here instead, e.g. "cad.example.com",
+      # and publish ports 80/443.
+      SERVER_NAME: ":8080"
+      QUEUE_WORKERS: 2
+      CONVERTER_RETENTION_MINUTES: 60
+      CONVERTER_MAX_FILES: 50
+      CONVERTER_MAX_FILE_KB: 51200
+    volumes:
+      - storage:/app/storage
+
+volumes:
+  storage:
